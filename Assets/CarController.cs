@@ -1,17 +1,13 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class CarController : MonoBehaviour
 {
-    // ورودی‌های کاربر به خودرو
-    private float horizontalInput;
-    private float verticalInput;
-    private float steerAngle;
-    private bool isBreaking;
+    [Header("User Inputs")]
+    public float inputSensitivity = 1.0f;
+    public KeyCode brakeKey = KeyCode.Space;
 
-    // کولای‌ها و ترانسفورم‌های چرخ‌ها
+    [Header("Wheel Colliders and Transforms")]
     public WheelCollider frontLeftWheelCollider;
     public WheelCollider frontRightWheelCollider;
     public WheelCollider rearLeftWheelCollider;
@@ -21,29 +17,36 @@ public class CarController : MonoBehaviour
     public Transform rearLeftWheelTransform;
     public Transform rearRightWheelTransform;
 
-    // حداکثر زاویه چرخش و نیروی موتور و نیروی ترمز
-    public float maxSteeringAngle = 30f;
-    public float motorForce = 50f;
-    public float brakeForce = 0f;
+    [Header("Car Physics Parameters")]
+    [SerializeField, Range(0f, 100f)] private float maxSteeringAngle = 30f;
+    [SerializeField, Range(0f, 1000f)] private float motorForce = 50f;
+    [SerializeField] private float brakeForce = 0f;
 
-    // تابعی که در هر فریم فراخوانی می‌شود
+    private float horizontalInput;
+    private float verticalInput;
+    private float steerAngle;
+    private bool isBreaking;
+
+    private void Start()
+    {
+        CheckComponents();
+    }
+
     private void FixedUpdate()
     {
-        GetInput();         // گرفتن ورودی‌های کاربر
-        HandleMotor();      // مدیریت نیروی موتور و ترمز
-        HandleSteering();   // مدیریت زاویه چرخش
-        UpdateWheels();     // به‌روزرسانی ترانسفورم چرخ‌ها
+        GetInput();
+        HandleMotor();
+        HandleSteering();
+        UpdateWheels();
     }
 
-    // گرفتن ورودی‌های کاربر
     private void GetInput()
     {
-        horizontalInput = Input.GetAxis("Horizontal");
-        verticalInput = Input.GetAxis("Vertical");
-        isBreaking = Input.GetKey(KeyCode.Space);
+        horizontalInput = Input.GetAxis("Horizontal") * inputSensitivity;
+        verticalInput = Input.GetAxis("Vertical") * inputSensitivity;
+        isBreaking = Input.GetKey(brakeKey);
     }
 
-    // مدیریت زاویه چرخش
     private void HandleSteering()
     {
         steerAngle = maxSteeringAngle * horizontalInput;
@@ -51,7 +54,6 @@ public class CarController : MonoBehaviour
         frontRightWheelCollider.steerAngle = steerAngle;
     }
 
-    // مدیریت نیروی موتور و ترمز
     private void HandleMotor()
     {
         frontLeftWheelCollider.motorTorque = verticalInput * motorForce;
@@ -64,7 +66,6 @@ public class CarController : MonoBehaviour
         rearRightWheelCollider.brakeTorque = brakeForce;
     }
 
-    // به‌روزرسانی ترانسفورم چرخ‌ها
     private void UpdateWheels()
     {
         UpdateWheelPos(frontLeftWheelCollider, frontLeftWheelTransform);
@@ -73,7 +74,6 @@ public class CarController : MonoBehaviour
         UpdateWheelPos(rearRightWheelCollider, rearRightWheelTransform);
     }
 
-    // به‌روزرسانی موقعیت و چرخش یک چرخ
     private void UpdateWheelPos(WheelCollider wheelCollider, Transform trans)
     {
         Vector3 pos;
@@ -81,5 +81,16 @@ public class CarController : MonoBehaviour
         wheelCollider.GetWorldPose(out pos, out rot);
         trans.rotation = rot;
         trans.position = pos;
+    }
+
+    private void CheckComponents()
+    {
+        if (frontLeftWheelCollider == null || frontRightWheelCollider == null ||
+            rearLeftWheelCollider == null || rearRightWheelCollider == null ||
+            frontLeftWheelTransform == null || frontRightWheelTransform == null ||
+            rearLeftWheelTransform == null || rearRightWheelTransform == null)
+        {
+            Debug.LogError("One or more WheelCollider or Transform components are missing!");
+        }
     }
 }
